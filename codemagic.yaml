@@ -1,0 +1,23 @@
+# UNI GENIUS - Codemagic cloud build (Android debug APK only)
+# The repo has no android/ folder yet, so the first step generates it.
+workflows:
+  android-debug-apk:
+    name: UNI GENIUS - Android debug APK
+    instance_type: mac_mini_m2
+    max_build_duration: 30
+    environment:
+      flutter: stable
+    scripts:
+      - name: Generate Android platform files (existing files are kept)
+        script: |
+          flutter create --platforms=android --project-name unigenius --org com.unigenius .
+          # flutter create adds a default counter-app test that does not match this project
+          rm -f test/widget_test.dart
+      - name: Get packages
+        script: flutter pub get
+      - name: Run tests
+        script: flutter test
+      - name: Build debug APK
+        script: flutter build apk --debug
+    artifacts:
+      - build/app/outputs/flutter-apk/*.apk
