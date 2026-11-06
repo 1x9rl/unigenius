@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { solve } from '../.core-test/solver.js';
+import { solve } from './.core-test/solver.js';
 const close=(a,b)=>assert.ok(Math.abs(a-b)<1e-5,`${a} != ${b}`);
 close(Number(solve('mach',{velocity:'340',sound:'340'}).result),1);
 close(Number(solve('compression',{v1:'500',v2:'50'}).result),10);

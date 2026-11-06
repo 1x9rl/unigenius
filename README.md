@@ -21,15 +21,17 @@ npm install
 npm run dev
 ```
 
-The frontend runs on the Vite development server. The optional AI API runs separately:
+On Replit, use the **Start application** workflow. `npm run dev` starts both the Vite frontend on port 5000 and the API on port 8787, with `/api` proxied automatically.
+
+Cloud AI is optional. Local guidance works without credentials. To configure a provider, set `AI_BASE_URL`, `AI_MODEL`, and `AI_API_KEY` through Replit's environment/secrets settings, then restart the workflow. For local development outside Replit:
 
 ```bash
 cp .env.example .env
 # Edit .env with a provider URL, secret API key, and model name
-npm run server
+npm run dev
 ```
 
-For local development, configure a reverse proxy so `/api` reaches `http://localhost:8787`, or use the deployment instructions below. Do not expose `AI_API_KEY` in frontend environment variables or commit `.env`.
+`npm run server` starts only the API. Do not expose `AI_API_KEY` in frontend environment variables or commit `.env`.
 
 ## Production build
 
@@ -37,7 +39,7 @@ For local development, configure a reverse proxy so `/api` reaches `http://local
 npm run build
 ```
 
-Deploy the generated `dist/` directory to a static host with SPA fallback. Deploy `server/index.mjs` as a Node service and route `/api/*` to it. The frontend currently calls `/api/chat` on the same origin.
+Deploy the generated `dist/` directory to a static host with SPA fallback. Deploy `index.mjs` as a Node service and route `/api/*` to it. The frontend currently calls `/api/chat` on the same origin.
 
 ## Offline behaviour — honest limits
 - After the first successful online load, the service worker caches the application shell for repeat visits. Browser cache behaviour and storage quotas vary by browser.
@@ -64,10 +66,11 @@ These are intentionally a small tested-by-inspection starter set, not a complete
 6. Add automated tests, accessibility checks, and deploy to a stable HTTPS origin before student rollout.
 
 ## Source migration
-`src/data/subjects.ts` preserves the exact seven IDs and names from the uploaded Flutter `lib/data/subjects.dart`. The previous Flutter source and architecture notes should remain archived until each needed feature is migrated and validated. This web foundation does not claim to port unimplemented Flutter stubs into working engines.
+`subjects.ts` preserves the exact seven IDs and names from the uploaded Flutter `lib/data/subjects.dart`. Web source files are at the repository root in this import. The previous Flutter source and architecture notes remain preserved until each needed feature is migrated and validated. This web foundation does not claim to port unimplemented Flutter stubs into working engines.
 
 ## Validation performed for this handoff
-- `node --check server/index.mjs` passed.
+- `node --check index.mjs` passed.
 - Core TypeScript calculation engine compiled independently and its five formula checks plus invalid-input guard passed (`npm run test:core`).
 - TypeScript/TSX syntax transpilation passed for all authored source modules.
-- A full Vite production build was **not verified in the authoring environment** because npm package installation could not complete. Run `npm install` and `npm run build` in an environment with npm registry access before deployment.
+- Dependencies installed and `npm run build` passed on Replit.
+- The running Arabic home screen was visually verified in Replit preview. API health responds successfully; cloud chat explicitly returns HTTP 503 until a provider is configured.

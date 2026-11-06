@@ -1,4 +1,4 @@
-import {subjects} from '../data/subjects';
+import {subjects} from './subjects';
 export function localReply(question:string,subjectId:string,mode:string){
  const subject=subjects.find(s=>s.id===subjectId);const q=question.trim();
  if(!q)return 'اكتب سؤالك حتى أقدر أساعدك.';
