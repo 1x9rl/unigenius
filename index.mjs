@@ -1,0 +1,13 @@
+import express from 'express';
+const app=express();app.use(express.json({limit:'2mb'}));
+const port=Number(process.env.PORT||8787);
+app.get('/api/health',(_,res)=>res.json({ok:true,providerConfigured:Boolean(process.env.AI_API_KEY),model:process.env.AI_MODEL||'not-configured'}));
+app.post('/api/chat',async(req,res)=>{
+ const {message,subjectId,mode='study',language='ar'}=req.body||{};
+ if(typeof message!=='string'||!message.trim())return res.status(400).json({error:'message_required'});
+ if(!process.env.AI_API_KEY||!process.env.AI_BASE_URL||!process.env.AI_MODEL)return res.status(503).json({error:'ai_provider_not_configured'});
+ const subjectNames={manufacturing:'Manufacturing Processes / عمليات التصنيع',ice:'Internal Combustion Engines / محركات الاحتراق الداخلي',analysis:'Mathematical Analysis / التحليل الرياضي',gasdyn:'Gas Dynamics / ديناميك الغازات',manufacturing_lab:'Manufacturing Lab / مختبر التصنيع',ice_lab:'Engines Lab / مختبر المحركات',gasdyn_lab:'Gas Dynamics Lab / مختبر ديناميك الغاز'};
+ const system=`You are UNI GENIUS, a careful third-year mechanical engineering tutor. Current subject: ${subjectNames[subjectId]||'Mechanical Engineering'}. Answer language: ${language==='ar'?'Arabic (clear Iraqi-friendly Arabic where natural)':'English'}. Teaching mode: ${mode}. Rules: explain assumptions; identify knowns and unknowns; use SI units; show equations and substitutions; independently sanity-check dimensions and signs; never invent experimental readings, textbook citations, page numbers, or missing givens; if information is insufficient, ask a concise clarification; distinguish idealized theory from real equipment; if uncertain, say so. Do not claim to have inspected an attachment unless its extracted contents are in the prompt. For numerical calculations, show enough steps for the student to verify independently.`;
+ try{const base=process.env.AI_BASE_URL.replace(/\/$/,'');const r=await fetch(`${base}/chat/completions`,{method:'POST',headers:{'Authorization':`Bearer ${process.env.AI_API_KEY}`,'Content-Type':'application/json'},body:JSON.stringify({model:process.env.AI_MODEL,temperature:0.2,messages:[{role:'system',content:system},{role:'user',content:message.trim()}]})});if(!r.ok){const body=await r.text();console.error('AI provider error',r.status,body.slice(0,500));return res.status(502).json({error:'ai_provider_error'})}const data=await r.json();const answer=data.choices?.[0]?.message?.content;if(typeof answer!=='string'||!answer.trim())return res.status(502).json({error:'empty_ai_response'});res.json({answer,model:process.env.AI_MODEL})}catch(e){console.error('AI request failed',e);res.status(502).json({error:'ai_connection_failed'})}
+});
+app.listen(port,()=>console.log(`UNI GENIUS API listening on ${port}`));
