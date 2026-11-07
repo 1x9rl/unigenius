@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { BrainCircuit, Camera, Check, Cloud, FileText, Library, Mic, Send, ShieldCheck, Sparkles, Upload, WifiOff, X } from 'lucide-react';
 import { subjects } from './subjects';
 import { read, write } from './storage';
 import { localReply } from './assistant';
-import { ChatMessage } from './ChatMessage';
+
+const ChatMessage = lazy(() => import('./ChatMessage').then((module) => ({ default: module.ChatMessage })));
 
 type ChatMessageRecord = {
   role: 'user' | 'assistant';
@@ -245,7 +246,9 @@ export function TutorPage({ lang, subject, setSubject, mode, setMode, onOpenLibr
                 </div>
                 <div className="bubble">
                   <div className="bubble-label">{message.role === 'assistant' ? 'UNI GENIUS' : 'YOU'}</div>
-                  <ChatMessage role={message.role} text={message.text} attachment={message.attachment}/>
+                  <Suspense fallback={<p className="markdown-loading">…</p>}>
+                    <ChatMessage role={message.role} text={message.text} attachment={message.attachment}/>
+                  </Suspense>
                 </div>
               </div>
             ))}

@@ -20,6 +20,7 @@ app.get('/api/health', async (_request, response) => {
       providerConfigured: true,
       provider: provider.provider,
       model: provider.model,
+      credentialSource: process.env.XAI_API_KEY ? 'XAI_API_KEY Replit Secret' : 'connected xAI integration',
     });
   } catch (error) {
     const message = error instanceof ProviderError
@@ -32,6 +33,7 @@ app.get('/api/health', async (_request, response) => {
       model: null,
       error: error instanceof ProviderError ? error.code : 'xai_connection_error',
       message,
+      credentialSource: process.env.XAI_API_KEY ? 'XAI_API_KEY Replit Secret' : 'connected xAI integration',
     });
   }
 });

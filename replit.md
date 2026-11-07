@@ -11,8 +11,9 @@
 
 ## Cloud AI and attachments
 - The backend uses the connected xAI integration through `@replit/connectors-sdk`. It discovers an image-capable model from xAI unless the non-secret `XAI_MODEL` setting overrides it.
-- A direct `XAI_API_KEY` Replit Secret is supported only as a fallback if the integration cannot authenticate. Never put credentials in frontend code or commit them.
+- A direct `XAI_API_KEY` Replit Secret is supported as a fallback if the integration cannot authenticate. The current secret is present but xAI rejects it; replace it with an active xAI API key before expecting generated answers. Never put credentials in frontend code or commit them.
 - `GET /api/health` checks the xAI model connection without exposing credentials. Cloud failures appear as explicit errors; the chat does not silently substitute local guidance.
+- `npm run test:browser` runs a Chromium smoke test for the tutor, chat failure behavior, and image upload. If xAI is authenticated, it sends one text question and one image question to the live model.
 - PNG/JPEG images are sent to xAI vision. Text-based PDFs are extracted with page labels, `.docx`, `.txt`, and `.md` files are extracted on the server. Scanned PDFs must be uploaded as page images; legacy `.doc` files and OCR from scanned PDFs are not supported.
 - Chat history is stored in the current browser's localStorage. Image/document binary contents are not persisted there.
 
