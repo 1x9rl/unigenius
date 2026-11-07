@@ -9,10 +9,12 @@
 - `npm run test:core` checks the five existing engineering formulas and invalid-input handling.
 - `npm run server` runs only the API.
 
-## Optional cloud AI
-No provider is configured by default. Local tutor guidance, calculators, notes, and study tasks remain usable without credentials.
-Cloud AI requires `AI_BASE_URL` (OpenAI-compatible API base URL), `AI_MODEL`, and `AI_API_KEY`. Set the API key through Replit Secrets; never expose it as a frontend variable. Restart the workflow after configuring a provider.
-`GET /api/health` reports API availability. Unconfigured cloud chat returns HTTP 503 rather than fabricated AI output.
+## Cloud AI and attachments
+- The backend uses the connected xAI integration through `@replit/connectors-sdk`. It discovers an image-capable model from xAI unless the non-secret `XAI_MODEL` setting overrides it.
+- A direct `XAI_API_KEY` Replit Secret is supported only as a fallback if the integration cannot authenticate. Never put credentials in frontend code or commit them.
+- `GET /api/health` checks the xAI model connection without exposing credentials. Cloud failures appear as explicit errors; the chat does not silently substitute local guidance.
+- PNG/JPEG images are sent to xAI vision. Text-based PDFs are extracted with page labels, `.docx`, `.txt`, and `.md` files are extracted on the server. Scanned PDFs must be uploaded as page images; legacy `.doc` files and OCR from scanned PDFs are not supported.
+- Chat history is stored in the current browser's localStorage. Image/document binary contents are not persisted there.
 
 ## Persistence and limits
-Notes, tasks, and chat history are stored in the current browser's localStorage, not in a server database. PWA registration is production-only. Cloud AI, OCR, PDF indexing, and account sync are not implied by running the app.
+Notes, tasks, and chat history are stored in the current browser's localStorage, not in a server database. PWA registration is production-only. Account sync, voice chat, PDF indexing, and OCR for scanned PDFs are not implemented.

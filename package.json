@@ -8,13 +8,25 @@
     "build": "tsc -b && vite build && cp sw.js manifest.webmanifest icon.svg dist/",
     "preview": "vite preview --host 0.0.0.0",
     "server": "node --env-file-if-exists=.env index.mjs",
-    "test:core": "tsc solver.ts --target ES2022 --module NodeNext --moduleResolution NodeNext --outDir .core-test && node core.test.mjs"
+    "test:core": "tsc solver.ts --target ES2022 --module NodeNext --moduleResolution NodeNext --outDir .core-test && node core.test.mjs",
+    "test:ai": "node --test ai-service.test.mjs",
+    "test:browser": "node browser-smoke.mjs",
+    "test": "npm run test:core && npm run test:ai"
   },
   "dependencies": {
+    "@replit/connectors-sdk": "^0.7.0",
     "express": "^4.22.3",
+    "katex": "^0.16.47",
     "lucide-react": "^0.468.0",
+    "mammoth": "^1.13.0",
+    "pdfjs-dist": "^4.10.38",
+    "playwright-core": "^1.65.0",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "react-markdown": "^10.1.0",
+    "rehype-katex": "^7.0.1",
+    "remark-gfm": "^4.0.1",
+    "remark-math": "^6.0.0"
   },
   "devDependencies": {
     "@types/react": "^18.3.18",

@@ -11,7 +11,9 @@ A React + TypeScript + Vite PWA foundation for a third-year mechanical engineeri
 - Deterministic calculators: Mach number, compression ratio, density, ideal-gas amount, and sensible heat.
 - Sample engineering concept quiz.
 - Diagnostics page that distinguishes implemented, partial, and not-yet-implemented engines.
-- Optional server-side OpenAI-compatible chat adapter. API keys remain on the server.
+- Server-side xAI chat and vision integration. Credentials stay on the server.
+- Markdown and LaTeX rendering for AI answers, explicit provider errors, and retry/local-guidance options.
+- Image analysis plus text extraction for text PDFs, `.docx`, `.txt`, and `.md` attachments.
 
 ## Run locally
 Requirements: Node.js 20+.
@@ -23,7 +25,7 @@ npm run dev
 
 On Replit, use the **Start application** workflow. `npm run dev` starts both the Vite frontend on port 5000 and the API on port 8787, with `/api` proxied automatically.
 
-Cloud AI is optional. Local guidance works without credentials. To configure a provider, set `AI_BASE_URL`, `AI_MODEL`, and `AI_API_KEY` through Replit's environment/secrets settings, then restart the workflow. For local development outside Replit:
+Cloud AI uses the connected xAI integration in Replit. The backend discovers an image-capable model automatically; `XAI_MODEL` is an optional non-secret override. If the integration rejects its credentials, set a valid `XAI_API_KEY` through Replit Secrets. Never expose provider credentials in frontend variables or commit `.env`. Local guidance remains available as an explicit option when cloud AI is unavailable. For local development outside Replit:
 
 ```bash
 cp .env.example .env
@@ -31,7 +33,7 @@ cp .env.example .env
 npm run dev
 ```
 
-`npm run server` starts only the API. Do not expose `AI_API_KEY` in frontend environment variables or commit `.env`.
+`npm run server` starts only the API. Local cloud AI requires `XAI_API_KEY` in `.env` or the environment.
 
 ## Production build
 
@@ -45,7 +47,8 @@ Deploy the generated `dist/` directory to a static host with SPA fallback. Deplo
 - After the first successful online load, the service worker caches the application shell for repeat visits. Browser cache behaviour and storage quotas vary by browser.
 - Notes, tasks, and chat history use localStorage on the current browser/device; they are not synced or encrypted in this foundation build.
 - The calculator and basic tutor guidance work without internet.
-- Cloud AI, OCR, PDF text extraction/indexing, image understanding, speech, account sync, and a fully offline local LLM are **not implemented yet**.
+- Image understanding uses xAI vision. Text-based PDF, DOCX, TXT, and Markdown files are extracted on the server.
+- Scanned-PDF OCR, legacy `.doc` extraction, speech, account sync, and a fully offline local LLM are **not implemented yet**.
 - The service worker does not cache API calls or user files.
 
 ## Engineering calculation notes

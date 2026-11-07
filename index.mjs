@@ -1,13 +1,70 @@
 import express from 'express';
-const app=express();app.use(express.json({limit:'2mb'}));
-const port=Number(process.env.PORT||8787);
-app.get('/api/health',(_,res)=>res.json({ok:true,providerConfigured:Boolean(process.env.AI_API_KEY),model:process.env.AI_MODEL||'not-configured'}));
-app.post('/api/chat',async(req,res)=>{
- const {message,subjectId,mode='study',language='ar'}=req.body||{};
- if(typeof message!=='string'||!message.trim())return res.status(400).json({error:'message_required'});
- if(!process.env.AI_API_KEY||!process.env.AI_BASE_URL||!process.env.AI_MODEL)return res.status(503).json({error:'ai_provider_not_configured'});
- const subjectNames={manufacturing:'Manufacturing Processes / عمليات التصنيع',ice:'Internal Combustion Engines / محركات الاحتراق الداخلي',analysis:'Mathematical Analysis / التحليل الرياضي',gasdyn:'Gas Dynamics / ديناميك الغازات',manufacturing_lab:'Manufacturing Lab / مختبر التصنيع',ice_lab:'Engines Lab / مختبر المحركات',gasdyn_lab:'Gas Dynamics Lab / مختبر ديناميك الغاز'};
- const system=`You are UNI GENIUS, a careful third-year mechanical engineering tutor. Current subject: ${subjectNames[subjectId]||'Mechanical Engineering'}. Answer language: ${language==='ar'?'Arabic (clear Iraqi-friendly Arabic where natural)':'English'}. Teaching mode: ${mode}. Rules: explain assumptions; identify knowns and unknowns; use SI units; show equations and substitutions; independently sanity-check dimensions and signs; never invent experimental readings, textbook citations, page numbers, or missing givens; if information is insufficient, ask a concise clarification; distinguish idealized theory from real equipment; if uncertain, say so. Do not claim to have inspected an attachment unless its extracted contents are in the prompt. For numerical calculations, show enough steps for the student to verify independently.`;
- try{const base=process.env.AI_BASE_URL.replace(/\/$/,'');const r=await fetch(`${base}/chat/completions`,{method:'POST',headers:{'Authorization':`Bearer ${process.env.AI_API_KEY}`,'Content-Type':'application/json'},body:JSON.stringify({model:process.env.AI_MODEL,temperature:0.2,messages:[{role:'system',content:system},{role:'user',content:message.trim()}]})});if(!r.ok){const body=await r.text();console.error('AI provider error',r.status,body.slice(0,500));return res.status(502).json({error:'ai_provider_error'})}const data=await r.json();const answer=data.choices?.[0]?.message?.content;if(typeof answer!=='string'||!answer.trim())return res.status(502).json({error:'empty_ai_response'});res.json({answer,model:process.env.AI_MODEL})}catch(e){console.error('AI request failed',e);res.status(502).json({error:'ai_connection_failed'})}
+import { ReplitConnectors } from '@replit/connectors-sdk';
+import { createAiService, ProviderError, UserInputError } from './ai-service.mjs';
+
+const app = express();
+app.use(express.json({ limit: '24mb' }));
+
+const port = Number(process.env.PORT || 8787);
+const ai = createAiService({
+  connectors: new ReplitConnectors(),
+  apiKey: process.env.XAI_API_KEY || '',
+  model: process.env.XAI_MODEL || '',
 });
-app.listen(port,()=>console.log(`UNI GENIUS API listening on ${port}`));
+
+app.get('/api/health', async (_request, response) => {
+  try {
+    const provider = await ai.health();
+    response.json({
+      ok: true,
+      providerConfigured: true,
+      provider: provider.provider,
+      model: provider.model,
+    });
+  } catch (error) {
+    const message = error instanceof ProviderError
+      ? error.message
+      : 'Could not check the xAI connection. Please retry.';
+    response.json({
+      ok: true,
+      providerConfigured: false,
+      provider: 'xAI',
+      model: null,
+      error: error instanceof ProviderError ? error.code : 'xai_connection_error',
+      message,
+    });
+  }
+});
+
+app.post('/api/chat', async (request, response) => {
+  const { message = '', subjectId, mode = 'study', language = 'ar', history = [], attachment } = request.body ?? {};
+  if (typeof message !== 'string' || message.length > 12_000) {
+    return response.status(400).json({ error: 'invalid_message', message: 'Enter a question of 12,000 characters or fewer.' });
+  }
+  if (!message.trim() && !attachment) {
+    return response.status(400).json({ error: 'message_required', message: 'Enter a question or attach a supported file.' });
+  }
+  if (typeof subjectId !== 'string' || !['ar', 'en'].includes(language)) {
+    return response.status(400).json({ error: 'invalid_request', message: 'Select a valid subject and response language.' });
+  }
+  if (!Array.isArray(history) || history.length > 50) {
+    return response.status(400).json({ error: 'invalid_history', message: 'The conversation is too long. Start a new chat or clear saved history.' });
+  }
+
+  try {
+    const result = await ai.reply({ message, subjectId, mode, language, history, attachment });
+    response.json(result);
+  } catch (error) {
+    if (error instanceof UserInputError) {
+      return response.status(error.status).json({ error: error.code, message: error.message });
+    }
+    if (error instanceof ProviderError) {
+      console.error('xAI request failed:', error.code);
+      return response.status(error.status).json({ error: error.code, message: error.message });
+    }
+    console.error('Unexpected chat request failure:', error);
+    return response.status(500).json({ error: 'chat_internal_error', message: 'The chat service encountered an unexpected error. Please retry.' });
+  }
+});
+
+app.listen(port, '0.0.0.0', () => console.log(`UNI GENIUS API listening on ${port}`));
